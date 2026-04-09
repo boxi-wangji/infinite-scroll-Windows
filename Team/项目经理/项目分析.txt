@@ -1,0 +1,125 @@
+================================================================
+Infinite Scroll - 项目分析记录
+分析日期：2026-04-09
+源码路径：C:\Users\boxiwangji_admin\Downloads\infinite-scroll-main
+================================================================
+
+【概述】
+一个 macOS 终端工作区管理器，用 Swift/SwiftUI 构建。
+核心理念：把多个终端面板排列在一个可无限垂直滚动的画布上，替代传统的标签页切换。
+
+----------------------------------------------------------------
+【技术栈】
+----------------------------------------------------------------
+语言          : Swift 5.9
+UI 框架       : SwiftUI + AppKit (NSViewRepresentable)
+终端渲染      : SwiftTerm (https://github.com/migueldeicaza/SwiftTerm)
+会话持久化    : tmux
+平台要求      : macOS 13+
+
+----------------------------------------------------------------
+【项目结构】
+----------------------------------------------------------------
+infinite-scroll-main/
+├── Package.swift                  # SPM 包配置，依赖 SwiftTerm
+├── Package.resolved               # 锁定依赖版本
+├── README.md                      # 项目说明
+├── package.sh                     # 构建 & 打包脚本（生成 DMG）
+├── Resources/
+│   └── AppIcon.icns               # 应用图标
+├── Sources/InfiniteScroll/
+│   ├── InfiniteScrollApp.swift    # @main 入口，注册快捷键命令
+│   ├── AppDelegate.swift          # NSApplicationDelegate
+│   ├── ContentView.swift          # 根视图
+│   ├── CmdScrollView.swift        # 拦截 Cmd+滚轮 的自定义滚动视图
+│   ├── RowView.swift              # 单行视图（横向排列多个 cell）
+│   ├── PanelModel.swift           # 数据模型：PanelModel / CellModel
+│   ├── PanelStore.swift           # 全局状态管理（ObservableObject）
+│   ├── PersistenceManager.swift   # JSON 序列化存储
+│   ├── TmuxManager.swift          # tmux 会话管理
+│   ├── TerminalWrapper.swift      # SwiftTerm 终端视图封装
+│   ├── TerminalViewRegistry.swift # UUID→NSView 全局注册表
+│   ├── MarkdownNotesView.swift    # 笔记面板（NSTextView 封装）
+│   ├── HelpOverlay.swift          # 快捷键帮助覆盖层
+│   ├── ProcessLocator.swift       # 环境变量 / PATH 配置
+│   └── Theme.swift                # 颜色 / 间距 常量
+└── .claude/skills/publish/
+    └── skill.md                   # 自定义发布 skill（构建+部署 DMG）
+
+----------------------------------------------------------------
+【架构层次】
+----------------------------------------------------------------
+InfiniteScrollApp（入口）
+└── ContentView
+    └── CmdScrollView（Cmd+滚轮拦截）
+        └── RowView[]（每一行）
+            ├── TerminalWrapper[]（终端面板，基于 SwiftTerm）
+            └── MarkdownNotesView（可选笔记面板）
+
+数据流：
+PanelStore（ObservableObject）
+├── panels: [PanelModel]
+│   └── cells: [CellModel]（类型：terminal | notes）
+├── 焦点状态（focusedRow, focusedCell, focusedCellID）
+└── 自动保存（Combine debounce 2秒）
+
+----------------------------------------------------------------
+【核心模块说明】
+----------------------------------------------------------------
+
+1. PanelModel / CellModel（数据层）
+   - PanelModel = 一行，横向包含多个 CellModel
+   - CellModel 类型：.terminal（终端）或 .notes（Markdown笔记）
+   - 支持 JSON 序列化，有向后兼容逻辑
+
+2. PanelStore（状态管理）
+   - 全局状态中心，持有所有行和焦点信息
+   - 用 Combine 订阅嵌套变化，防抖 2 秒后自动保存
+   - 监听鼠标点击事件同步真实 first responder 焦点
+
+3. TmuxManager（会话持久化）
+   - 每个终端 cell 对应一个 tmux session
+   - 命名格式：is-{UUID}
+   - 自动发现 tmux 二进制（Homebrew / 系统 / Bundle 内置均支持）
+   - 启动时清理孤儿 session（上次未正常退出残留）
+   - 支持 CSI-u 扩展键协议（兼容 Claude Code 等工具）
+
+4. TerminalViewRegistry / NotesViewRegistry（视图注册表）
+   - UUID → NSView 的全局映射，解耦 SwiftUI 与 AppKit 视图层
+   - 焦点跳转时负责将目标行滚动至可视区域
+
+5. ProcessLocator（环境配置）
+   - 注入 Homebrew、nvm、npm 等路径到 PATH
+   - 伪装 TERM_PROGRAM=iTerm.app，触发 CSI-u 键盘协议
+
+6. PersistenceManager（持久化）
+   - 自动保存：Combine debounce 2 秒，监听 panels/cells/fontSize
+   - 退出时强制保存：监听 NSApplication.willTerminateNotification
+   - tmux 会话使得终端内容在重启后可自动恢复
+
+----------------------------------------------------------------
+【快捷键】
+----------------------------------------------------------------
+Cmd+Shift+↓    新增行
+Cmd+D           复制当前单元格
+Cmd+W           关闭当前单元格
+Cmd+↑           焦点移到上一行
+Cmd+↓           焦点移到下一行
+Cmd+←           焦点左移
+Cmd+→           焦点右移
+Cmd+滚轮        行间无限滚动
+Cmd+=           放大字体
+Cmd+-           缩小字体
+Cmd+/           显示/隐藏快捷键帮助
+
+----------------------------------------------------------------
+【注意事项】
+----------------------------------------------------------------
+- 这是 macOS 专属应用，依赖 AppKit、macOS 13+ API 以及 tmux
+- 无法在 Windows 环境下构建或运行
+- 包含自定义 /publish skill，用于构建 DMG 并自动部署到官网
+- 官网域名：infinite-scroll.dev，托管于 Vercel，Web 仓库独立
+
+================================================================
+EOF
+================================================================

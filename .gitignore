@@ -1,0 +1,25 @@
+# ── macOS (legacy) ───────────────────────────────────────────────────────────
+.build/
+.swiftpm/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+dmg_staging/
+*.app/
+*.dmg
+.DS_Store
+
+# ── Windows / Node ───────────────────────────────────────────────────────────
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+Thumbs.db
+
+# electron-builder cache
+.electron-builder-cache/
+
+# Local env
+.env
+.env.local

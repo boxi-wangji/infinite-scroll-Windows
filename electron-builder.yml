@@ -1,0 +1,33 @@
+appId: dev.infinite-scroll.windows
+productName: Infinite Scroll
+copyright: Copyright © 2026
+
+directories:
+  output: release
+  buildResources: Resources
+
+files:
+  - dist
+  - dist-electron
+  - "!**/*.map"
+  - "!node_modules/**"
+
+extraResources:
+  - from: Resources/
+    to: Resources/
+    filter: ["**/*"]
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: Resources/AppIcon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+asar: true
