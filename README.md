@@ -2,8 +2,7 @@
 
 在一块可无限纵向滚动的画布上，管理多个终端面板，告别标签页切换。
 
-> Windows 移植版，基于 Electron + React + TypeScript + xterm.js + node-pty  
-> macOS 原版（Swift/SwiftUI）见 `Sources/` 目录
+> 基于 Electron + React + TypeScript + xterm.js + node-pty
 
 ---
 
@@ -28,7 +27,8 @@
 
 - Windows 10 21H2+ 或 Windows 11
 - Node.js 18 LTS+
-- [Visual Studio C++ 生成工具](https://visualstudio.microsoft.com/visual-cpp-build-tools/)（node-pty 原生编译需要）
+
+> 开发环境还需要 [Visual Studio C++ 生成工具](https://visualstudio.microsoft.com/visual-cpp-build-tools/)，用于编译 node-pty 原生模块。**直接安装 .exe 的用户不需要此项。**
 
 ---
 
@@ -109,11 +109,7 @@ npm run package
 │   └── create-icon.js    # 代码生成应用图标
 ├── Resources/
 │   └── AppIcon.ico       # 应用图标
-└── Team/                 # 团队分工文档
-    ├── 前端/
-    ├── 后端/
-    ├── 测试/
-    └── 项目经理/
+└── Team/                 # 团队分工文档（前端 / 后端 / 测试 / 项目经理）
 ```
 
 ---
