@@ -10,12 +10,7 @@ files:
   - dist
   - dist-electron
   - "!**/*.map"
-  - "!node_modules/**"
-
-extraResources:
-  - from: Resources/
-    to: Resources/
-    filter: ["**/*"]
+  - "!**/*.ts"
 
 win:
   target:
@@ -29,5 +24,8 @@ nsis:
   deleteAppDataOnUninstall: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
+  shortcutName: Infinite Scroll
 
 asar: true
+asarUnpack:
+  - "node_modules/node-pty/**"

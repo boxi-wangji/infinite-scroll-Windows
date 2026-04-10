@@ -11,10 +11,12 @@ interface Props {
   cellId: string
   panelId: string
   focused: boolean
+  shell?: string
   onFocus: () => void
+  onContextMenu?: (x: number, y: number, selection: string) => void
 }
 
-export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, onFocus }) => {
+export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, shell, onFocus, onContextMenu }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -64,6 +66,19 @@ export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, onFoc
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
       if (!e.ctrlKey || e.type !== 'keydown') return true
 
+      // Ctrl+C: copy selection if exists; otherwise send interrupt to PTY
+      if (e.key === 'c') {
+        const sel = term.getSelection()
+        if (sel) {
+          navigator.clipboard.writeText(sel)
+          return false  // copied — don't send \x03 to PTY
+        }
+        return true  // no selection → send interrupt signal
+      }
+
+      // Ctrl+V: let xterm handle natively via textarea paste event (browser fires it)
+      // Manually intercepting here causes double-paste — xterm writes once, we write again
+
       const appKeys = new Set([
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
         '=', '+', '-', '/',
@@ -72,7 +87,7 @@ export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, onFoc
 
       if (appKeys.has(e.key)) return false  // bubble to window, don't send to PTY
 
-      return true  // everything else (Ctrl+C, Ctrl+L, etc.) goes to the shell
+      return true  // everything else (Ctrl+L, etc.) goes to the shell
     })
 
     // ── 2. Restore scrollback (if session exists) ──────────────────────────
@@ -109,8 +124,8 @@ export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, onFoc
 
     // ── 5. Spawn PTY ───────────────────────────────────────────────────────
     const dims = fitAddon.proposeDimensions() ?? { cols: 80, rows: 24 }
-    const shell = window.electronAPI.getDefaultShell()
-    window.electronAPI.spawnPty(cellId, shell, cwdRef.current, dims.cols, dims.rows)
+    const resolvedShell = shell ?? window.electronAPI.getDefaultShell()
+    window.electronAPI.spawnPty(cellId, resolvedShell, cwdRef.current, dims.cols, dims.rows)
 
     // PTY data → terminal display
     const unsubData = window.electronAPI.onPtyData(cellId, (data) => {
@@ -187,6 +202,19 @@ export const TerminalPanel: React.FC<Props> = ({ cellId, panelId, focused, onFoc
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
   }, [])
+
+  // ── Right-click → context menu (capture phase, before xterm) ─────────────
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || !onContextMenu) return
+    const handler = (e: MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onContextMenu(e.clientX, e.clientY, termRef.current?.getSelection() ?? '')
+    }
+    el.addEventListener('contextmenu', handler, { capture: true })
+    return () => el.removeEventListener('contextmenu', handler, { capture: true })
+  }, [onContextMenu])
 
   // ── Focus sync (for focus changes AFTER mount) ────────────────────────────
   useEffect(() => {

@@ -18,6 +18,9 @@ interface PanelState {
   setFontSize: (size: number) => void
   updateSession: (data: SessionData) => void
   saveLayout: () => void
+  renameCell: (panelId: string, cellId: string, name: string) => void
+  setCellShell: (panelId: string, cellId: string, shell: string) => void
+  setPanelHeight: (panelId: string, height: number, save?: boolean) => void
 }
 
 function makeTerminalPanel(): PanelModel {
@@ -37,31 +40,15 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   init(panels, fontSize, sessions) {
     if (panels.length === 0) {
       const panel = makeTerminalPanel()
-      set({
-        panels: [panel],
-        focusedPanelId: panel.id,
-        focusedCellId: panel.cells[0].id,
-        fontSize,
-        sessions,
-      })
+      set({ panels: [panel], focusedPanelId: panel.id, focusedCellId: panel.cells[0].id, fontSize, sessions })
     } else {
-      set({
-        panels,
-        fontSize,
-        sessions,
-        focusedPanelId: panels[0].id,
-        focusedCellId: panels[0].cells[0]?.id ?? null,
-      })
+      set({ panels, fontSize, sessions, focusedPanelId: panels[0].id, focusedCellId: panels[0].cells[0]?.id ?? null })
     }
   },
 
   addPanel() {
     const panel = makeTerminalPanel()
-    set(state => ({
-      panels: [...state.panels, panel],
-      focusedPanelId: panel.id,
-      focusedCellId: panel.cells[0].id,
-    }))
+    set(state => ({ panels: [...state.panels, panel], focusedPanelId: panel.id, focusedCellId: panel.cells[0].id }))
     get().saveLayout()
   },
 
@@ -72,13 +59,10 @@ export const usePanelStore = create<PanelState>((set, get) => ({
         .map(p => p.id !== panelId ? p : { ...p, cells: p.cells.filter(c => c.id !== cellId) })
         .filter(p => p.cells.length > 0)
 
-      // Ensure at least one panel exists
       if (panels.length === 0) {
         const panel = makeTerminalPanel()
         return { panels: [panel], focusedPanelId: panel.id, focusedCellId: panel.cells[0].id }
       }
-
-      // Adjust focus if removed cell was focused
       const stillFocused = panels.some(p => p.cells.some(c => c.id === state.focusedCellId))
       if (!stillFocused) {
         const first = panels[0]
@@ -90,7 +74,9 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   },
 
   duplicateCell(panelId, cellId) {
-    const newCell: CellModel = { id: uuidv4(), type: 'terminal' }
+    const panel = get().panels.find(p => p.id === panelId)
+    const srcCell = panel?.cells.find(c => c.id === cellId)
+    const newCell: CellModel = { id: uuidv4(), type: srcCell?.type ?? 'terminal', shell: srcCell?.shell }
     set(state => ({
       panels: state.panels.map(p => {
         if (p.id !== panelId) return p
@@ -107,9 +93,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   addNotesCell(panelId) {
     const newCell: CellModel = { id: uuidv4(), type: 'notes' }
     set(state => ({
-      panels: state.panels.map(p =>
-        p.id === panelId ? { ...p, cells: [...p.cells, newCell] } : p
-      ),
+      panels: state.panels.map(p => p.id === panelId ? { ...p, cells: [...p.cells, newCell] } : p),
       focusedPanelId: panelId,
       focusedCellId: newCell.id,
     }))
@@ -134,5 +118,34 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   saveLayout() {
     const { panels, fontSize } = get()
     window.electronAPI.saveLayout(panels, fontSize)
+  },
+
+  renameCell(panelId, cellId, name) {
+    set(state => ({
+      panels: state.panels.map(p =>
+        p.id !== panelId ? p : {
+          ...p, cells: p.cells.map(c => c.id === cellId ? { ...c, name } : c)
+        }
+      )
+    }))
+    get().saveLayout()
+  },
+
+  setCellShell(panelId, cellId, shell) {
+    set(state => ({
+      panels: state.panels.map(p =>
+        p.id !== panelId ? p : {
+          ...p, cells: p.cells.map(c => c.id === cellId ? { ...c, shell } : c)
+        }
+      )
+    }))
+    get().saveLayout()
+  },
+
+  setPanelHeight(panelId, height, save = true) {
+    set(state => ({
+      panels: state.panels.map(p => p.id === panelId ? { ...p, height } : p)
+    }))
+    if (save) get().saveLayout()
   },
 }))

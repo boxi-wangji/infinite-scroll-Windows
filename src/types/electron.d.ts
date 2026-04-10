@@ -44,6 +44,7 @@ declare global {
       // 环境信息
       getUserHome: () => string
       getDefaultShell: () => string
+      getAvailableShells: () => { label: string; path: string }[]
     }
   }
 }

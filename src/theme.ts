@@ -30,19 +30,19 @@ const themeA = {
   defaultPanelHeight: 380,
 }
 
-// One Dark Pro — 彩虹色但不刺眼，blue 是真蓝不是紫
+// Dracula — 纯黑底
 const xtermA = {
   background:          '#000000',
-  foreground:          '#abb2bf',
-  cursor:              '#528bff',
+  foreground:          '#f8f8f2',
+  cursor:              '#f8f8f2',
   cursorAccent:        '#000000',
-  selectionBackground: '#3e4451',
-  selectionForeground: '#e2e8f0',
-  black:   '#3f4451', red:     '#e06c75', green:  '#98c379', yellow: '#e5c07b',
-  blue:    '#61afef', magenta: '#c678dd', cyan:   '#56b6c2', white:  '#abb2bf',
-  brightBlack:   '#4b5263', brightRed:   '#ff6e6e', brightGreen:  '#a8e88a',
-  brightYellow:  '#f4d27a', brightBlue:  '#7ec3f8', brightMagenta:'#d48ee0',
-  brightCyan:    '#6ec9d4', brightWhite: '#ffffff',
+  selectionBackground: '#44475a',
+  selectionForeground: '#f8f8f2',
+  black:   '#21222c', red:     '#ff5555', green:  '#50fa7b', yellow: '#f1fa8c',
+  blue:    '#3d1a8a', magenta: '#ff79c6', cyan:   '#8be9fd', white:  '#f8f8f2',
+  brightBlack:   '#6272a4', brightRed:   '#ff6e6e', brightGreen:  '#69ff94',
+  brightYellow:  '#ffffa5', brightBlue:  '#61afef', brightMagenta:'#ff92df',
+  brightCyan:    '#a4ffff', brightWhite: '#ffffff',
 }
 
 // ── 版本 B：Matrix Green ─────────────────────────────────────────────────────

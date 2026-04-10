@@ -64,7 +64,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     process.env.USERPROFILE || process.env.HOME || 'C:\\',
 
   getDefaultShell: (): string => {
-    // Prefer PowerShell 7 (pwsh) > PowerShell 5.1 > CMD
     try {
       const fs = require('fs') as typeof import('fs')
       const ps7 = 'C:\\Program Files\\PowerShell\\7\\pwsh.exe'
@@ -73,5 +72,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
       if (fs.existsSync(ps5)) return ps5
     } catch { /* fall through */ }
     return process.env.COMSPEC || 'C:\\Windows\\System32\\cmd.exe'
+  },
+
+  getAvailableShells: (): { label: string; path: string }[] => {
+    const shells: { label: string; path: string }[] = []
+    try {
+      const fs = require('fs') as typeof import('fs')
+      const ps7 = 'C:\\Program Files\\PowerShell\\7\\pwsh.exe'
+      const ps5 = 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+      if (fs.existsSync(ps7)) shells.push({ label: 'PS 7',  path: ps7 })
+      if (fs.existsSync(ps5)) shells.push({ label: 'PS 5',  path: ps5 })
+    } catch { /* fall through */ }
+    shells.push({ label: 'CMD', path: process.env.COMSPEC || 'C:\\Windows\\System32\\cmd.exe' })
+    return shells
   },
 })
